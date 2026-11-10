@@ -14,14 +14,18 @@
  * each other and with the walls of the box.
  */
  struct Simulator_t {
-    double width;
-    double height;
+   double width;                  // Largeur de la boîte
+   double height;                 // Hauteur de la boîte
+   int maxParticles;              // Nombre maximal de particules
+   int nbParticles;               // Nombre actuel de particules
 
-    Particle **particles;
-    int maxNumParticles;
-    int numCollisions; 
-    double tempsécoulé;
-    
+   Particle **particles;          // Tableau de pointeurs vers les particules
+   double time;                   // Temps écoulé depuis le début
+   int numCollisions;             // Nombre total de collisions entre particules
+
+   bool started;                  // La simulation a-t-elle commencé ?
+   Event *currentEvent;
+
 }; 
 
 
@@ -38,7 +42,7 @@ Simulator *simulatorCreate(double width, double height, int maxNumParticles)
 
    s->width = width ; 
    s->height = height ; 
-   s->maxNumParticles = maxNumParticles;
+   s->maxParticles = maxNumParticles;
 
 
    return s;
@@ -88,7 +92,7 @@ double simulatorGetWidth(Simulator *s)
  */
 int simulatorGetNumCollisions(Simulator *s)
 {
-   double numcollisions = s->maxNumParticles ;
+   double numcollisions = s->numCollisions ;
     return numcollisions ;
 }
 
@@ -100,7 +104,9 @@ int simulatorGetNumCollisions(Simulator *s)
  */
 double simulatorGetElapsedTime(Simulator *s)
 {
-
+   double time = s->time; 
+   
+   return time ; 
 }
 
 /**
@@ -109,7 +115,11 @@ double simulatorGetElapsedTime(Simulator *s)
  * @param s  A simulator.
  * @return The number of particles.
  */
-int simulatorGetNumberOfParticles(Simulator *s);
+int simulatorGetNumberOfParticles(Simulator *s)
+{
+   int Numberofparticles = s->nbParticles;
+   return Numberofparticles;
+}
 
 /**
  * @brief Adds a particle to the simulation. The particle is not added if:
@@ -125,7 +135,37 @@ int simulatorGetNumberOfParticles(Simulator *s);
  * @param p  The particle to add.
  * @return true if the particle has been added, false otherwise.
  */
-bool simulatorAddParticle(Simulator *s, Particle *p);
+bool simulatorAddParticle(Simulator *s, Particle *p)
+{
+   if (s->nbParticles >= s->maxParticles)
+    {
+        return false;
+    }
+
+    if (s->started)
+    {
+        return false;
+    }
+
+    if (particleOutside(p, s->width, s->height))
+    {
+        return false;
+    }
+
+    for (int i = 0; i < s->nbParticles; i++)
+    {
+        if (particleOverlap(p, s->particles[i]))
+        {
+            return false;
+        }
+    }
+
+    s->particles[s->nbParticles] = p;
+    s->nbParticles++;
+
+    return true;
+   }
+
 
 /**
  * @brief Returns a particle of the simulation. Particles are indexed from 0
@@ -136,7 +176,13 @@ bool simulatorAddParticle(Simulator *s, Particle *p);
  * @param index  The index of the particle.
  * @return The particle of index index, or NULL if index is not valid.
  */
-Particle *simulatorGetParticle(Simulator *s, int index);
+Particle *simulatorGetParticle(Simulator *s, int index)
+{
+    for (int i = 0; i < index; i++)
+    {
+      
+    }
+}
 
 /**
  * @brief Returns the next event of the simulation, i.e. the earliest
