@@ -6,7 +6,7 @@
 #include "color.h"
 #include <math.h>
 #include "vector.h"
-
+#include "Event.h"
 
 /**
  * @brief Opaque type representing an event-driven simulation of particles
@@ -178,10 +178,13 @@ bool simulatorAddParticle(Simulator *s, Particle *p)
  */
 Particle *simulatorGetParticle(Simulator *s, int index)
 {
-    for (int i = 0; i < index; i++)
+     if (index < 0 || index >= s->nbParticles)
     {
-      
+        return NULL;
     }
+
+    return s->particles[index];
+    
 }
 
 /**
@@ -197,7 +200,41 @@ Particle *simulatorGetParticle(Simulator *s, int index)
  * @param s  A simulator.
  * @return The next event of the simulation.
  */
-Event *simulatorGetNextEvent(Simulator *s);
+Event *simulatorGetNextEvent(Simulator *s)
+{
+   eventSet(s->currentEvent, NONE,NULL ,NULL ,INFINITY_TIME); // current event crée
+
+   for (int i = 0 ; i <s->nbParticles; i++ ) // parcours des particules et on cherche les collisions entre particules.
+   {
+      Particle *p = s->particles[i];
+      double width = s->width;                  
+      double height = s->height;
+      double tx = particleGetXWallCollisionTime (p,width);
+      double ty = particleGetYWallCollisionTime (p, height);
+
+       if (s->time + tx < eventGetTime(s->currentEvent))
+       {
+         eventSet(s->currentEvent,XWALL, p, NULL, s->time + tx);
+       }
+       if (s->time + ty < eventGetTime(s->currentEvent))
+       {
+         eventSet(s->currentEvent,YWALL, p, NULL, s->time + ty);
+       }
+      
+
+        for (int j = i + 1; j < s->nbParticles; j++)
+        {
+            double t = particleGetCollisionTime(p, s->particles[j]);
+
+            if (s->time + t < eventGetTime(s->currentEvent))
+            {
+                eventSet(s->currentEvent, COLLISION , p, s->particles[j], s->time + t);
+            }
+   }
+}
+   s->started = true ; 
+   return s->currentEvent;
+}
 
 /**
  * @brief Advances the simulation from the current time t to time t + dt.
@@ -210,7 +247,48 @@ Event *simulatorGetNextEvent(Simulator *s);
  * @param s   A simulator.
  * @param dt  The duration of the step (>= 0).
  */
-void simulatorStep(Simulator *s, double dt);
+
+static void collisionHandle (Event *collision , Simulator *s) 
+{
+   if (eventGetType(collision)== XWALL){
+      Particle *p1 = eventGetParticle1(collision);
+      particleHandleXWallCollision(p1);
+   }
+   if (eventGetType(collision)== YWALL) {
+      Particle *p1 = eventGetParticle1(collision);
+      particleHandleYWallCollision(p1);}
+   if (eventGetType(collision)== COLLISION) {
+      Particle *p1 = eventGetParticle1(collision);
+      Particle *p2 = eventGetParticle1(collision);
+      particleHandleWallCollision(p1,p2);}
+ }
+static void allparticlemove(Simulator *s, double dt)
+{ 
+   for (int i = 0 ; i < s->nbParticles ; i++ )
+   {
+      particleMove(s->particles[i], dt);
+   }
+}
+void simulatorStep(Simulator *s, double dt)
+{
+   
+   Event * nextevent = simulatorGetNextEvent(s);
+   double t = s->time + dt;
+
+   
+   while (eventGetTime(nextevent)< t) 
+   {
+      double t_vat = eventGetTime(nextevent) ; 
+      allparticlemove(s , t_vat - s->time );
+      s->time = eventGetTime(nextevent);
+      collisionHandle(nextevent , s ); 
+      eventFree(nextevent); 
+      nextevent = simulatorGetNextEvent(s);
+   }
+   allparticlemove(s, t-s->time);
+   s->time = t ;
+ 
+}
 
 /**
  * @brief Computes the average, over all particles of the simulation, of a
@@ -222,6 +300,9 @@ void simulatorStep(Simulator *s, double dt);
  * @param f  A function computing a value from a particle.
  * @return The average of f over all particles.
  */
-double simulatorStatParticles(Simulator *s, double (*f)(Particle *));
+double simulatorStatParticles(Simulator *s, double (*f)(Particle *))
+{
+   
+}
 
 

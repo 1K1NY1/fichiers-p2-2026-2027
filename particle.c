@@ -34,74 +34,40 @@ void particleFree(Particle *p){
     free (p);
 }
 
-/**
- * @brief Returns the radius of a particle.
- *
- * @param p  A particle.
- * @return The radius of the particle.
- */
+
 double particleGetRadius(Particle *p)
 {
     double radius = p->radius ; 
     return radius ; 
 }
 
-/**
- * @brief Returns the mass of a particle.
- *
- * @param p  A particle.
- * @return The mass of the particle.
- */
+
 double particleGetMass(Particle *p)
 {
     double mass = p->mass ; 
     return mass ;
 }
 
-/**
- * @brief Returns the current position of (the center of) a particle.
- *
- * @param p  A particle.
- * @return The position of the particle.
- */
+
 Vector particleGetPosition(Particle *p)
 {
     Vector position = p->position ;
     return position ;
 }
 
-/**
- * @brief Returns the current velocity of a particle.
- *
- * @param p  A particle.
- * @return The velocity of the particle.
- */
 Vector particleGetVelocity(Particle *p){
     Vector velocity = p->velocity ; 
     return velocity ;
 }
 
-/**
- * @brief Returns the color of a particle.
- *
- * @param p  A particle.
- * @return The color of the particle.
- */
+
 Color particleGetColor(Particle *p)
 {
     Color color = p->color ; 
     return color ; 
 }
 
-/**
- * @brief Returns the number of collisions with other particles undergone by
- * a particle since its creation (collisions with the walls are not counted).
- * The number is returned as a double so that this function can be passed
- * as argument to simulatorStatParticles.
- *
- * @param p  A particle.
- * @return The number of collisions of the particle.
- */
+
 double particleGetNumCollisions(Particle *p)
 {
     double numcollisions = p->numcollision ;
@@ -109,13 +75,7 @@ double particleGetNumCollisions(Particle *p)
 }
 
 
-/**
- * @brief Returns the kinetic energy of a particle, i.e. m * ||v||^2 / 2,
- * where m is its mass and v its velocity.
- *
- * @param p  A particle.
- * @return The kinetic energy of the particle.
- */
+
 double particleKineticEnergy(Particle *p)
 {
    double KineticEnergy = 0 ; 
@@ -128,13 +88,7 @@ double particleKineticEnergy(Particle *p)
     return  KineticEnergy ; 
 }
 
-/**
- * @brief Moves a particle in a straight line at constant velocity during
- * a time dt. Collisions are not taken into account.
- *
- * @param p   A particle.
- * @param dt  The duration of the move (>= 0).
- */
+
 void particleMove(Particle *p, double dt)
 {
     Vector position = particleGetPosition(p); 
@@ -144,15 +98,7 @@ void particleMove(Particle *p, double dt)
 
     position = vectorSum( position , meters) ; 
 }
-/**
- * @brief Updates the velocities of two particles that are in contact,
- * according to the laws of the elastic collision between two disks, and
- * increments the number of collisions of both particles. Does nothing if
- * p1 and p2 are the same particle.
- *
- * @param p1  The first particle.
- * @param p2  The second particle.
- */
+
 void particleHandleCollision(Particle *p1, Particle *p2)
 {
     if (p1 == p2) {
@@ -198,12 +144,7 @@ void particleHandleCollision(Particle *p1, Particle *p2)
 
 
 
-/**
- * @brief Updates the velocity of a particle that hits a vertical wall
- * (the x component of its velocity is reversed).
- *
- * @param p  A particle.
- */
+
 void particleHandleXWallCollision(Particle *p)
 {
     Vector velocity = particleGetVelocity(p);
@@ -212,12 +153,7 @@ void particleHandleXWallCollision(Particle *p)
 
     p->velocity = velocity;
 }
-/**
- * @brief Updates the velocity of a particle that hits a horizontal wall
- * (the y component of its velocity is reversed).
- *
- * @param p  A particle.
- */
+
 void particleHandleYWallCollision(Particle *p)
 {
     Vector velocity = particleGetVelocity(p);
@@ -227,16 +163,7 @@ void particleHandleYWallCollision(Particle *p)
     p->velocity = velocity;
 }
 
-/**
- * @brief Computes the time before two particles collide, assuming that they
- * both keep moving in a straight line at constant velocity.
- *
- * @param p1  The first particle.
- * @param p2  The second particle.
- * @return The time (relative to the current time) before the collision, or
- * INFINITY_TIME if the particles will never collide (in particular if they
- * are moving away from each other).
- */
+
 double particleGetCollisionTime(Particle *p1, Particle *p2)
 {
     if (p1 == p2)
@@ -275,16 +202,7 @@ double particleGetCollisionTime(Particle *p1, Particle *p2)
     return (-dv_dp - sqrt(d)) / dv_dv;
 }
 
-/**
- * @brief Computes the time before a particle hits one of the vertical walls
- * (x = 0 or x = width) of the box, assuming that it keeps moving in a
- * straight line at constant velocity.
- *
- * @param p      A particle.
- * @param width  The width of the box.
- * @return The time (relative to the current time) before the particle hits
- * a vertical wall, or INFINITY_TIME if it never will.
- */
+
 double particleGetXWallCollisionTime(Particle *p, double width)
 {
     Vector position = particleGetPosition(p);
@@ -305,16 +223,7 @@ double particleGetXWallCollisionTime(Particle *p, double width)
     return INFINITY_TIME;
 }
 
-/**
- * @brief Computes the time before a particle hits one of the horizontal walls
- * (y = 0 or y = height) of the box, assuming that it keeps moving in a
- * straight line at constant velocity.
- *
- * @param p       A particle.
- * @param height  The height of the box.
- * @return The time (relative to the current time) before the particle hits
- * a horizontal wall, or INFINITY_TIME if it never will.
- */
+
 double particleGetYWallCollisionTime(Particle *p, double height)
 {
     Vector position = particleGetPosition(p);
@@ -335,15 +244,7 @@ double particleGetYWallCollisionTime(Particle *p, double height)
     return INFINITY_TIME;
 }
 
-/**
- * @brief Checks whether two particles overlap or touch each other, i.e.
- * whether the distance between their centers is lower than or equal to the
- * sum of their radii.
- *
- * @param p1  The first particle.
- * @param p2  The second particle.
- * @return true if the particles overlap or touch, false otherwise.
- */
+
 bool particleOverlap(Particle *p1, Particle *p2)
 {
     Vector pos1 = particleGetPosition(p1);
@@ -358,15 +259,7 @@ bool particleOverlap(Particle *p1, Particle *p2)
     return distance <= rayon;
 }
 
-/**
- * @brief Checks whether a particle touches or crosses one of the walls of
- * the box [0, width] x [0, height].
- *
- * @param p       A particle.
- * @param width   The width of the box.
- * @param height  The height of the box.
- * @return true if the particle touches or crosses a wall, false otherwise.
- */
+
 bool particleOutside(Particle *p, double width, double height)
 {
     Vector position = particleGetPosition(p);
