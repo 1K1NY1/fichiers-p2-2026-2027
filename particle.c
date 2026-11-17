@@ -88,15 +88,16 @@ double particleKineticEnergy(Particle *p)
     return  KineticEnergy ; 
 }
 
-
 void particleMove(Particle *p, double dt)
 {
-    Vector position = particleGetPosition(p); 
-    Vector velocity = particleGetVelocity(p); 
-    
-    Vector meters = vectorMultByScalar( velocity , dt) ;
+    Vector position = particleGetPosition(p);
+    Vector velocity = particleGetVelocity(p);
 
-    position = vectorSum( position , meters) ; 
+    Vector meters = vectorMultByScalar(velocity, dt);
+
+    position = vectorSum(position, meters);
+
+    p->position = position;          // AJOUT
 }
 
 void particleHandleCollision(Particle *p1, Particle *p2)
@@ -108,17 +109,14 @@ void particleHandleCollision(Particle *p1, Particle *p2)
     Vector pos2 = particleGetPosition(p2);
     Vector vel1 = particleGetVelocity(p1);
     Vector vel2 = particleGetVelocity(p2);
-    double r1 = particleGetRadius(p1);
-    double r2 = particleGetRadius(p2);
     double m1 = particleGetMass(p1);
     double m2 = particleGetMass(p2);
-    Vector dp = vectorDiff(pos2,pos1);
-    Vector dv = vectorDiff(vel2,vel1);
+    Vector dp = vectorDiff(pos2, pos1);
+    Vector dv = vectorDiff(vel2, vel1);
 
     double dot_dv_dp = vectorDotProduct(dv, dp);
-    double norm_dp_sq = vectorDotProduct(dp, dp); // ||Δp||²
+    double norm_dp_sq = vectorDotProduct(dp, dp);
     double mass_sum = m1 + m2;
-
 
     if (norm_dp_sq == 0.0) {
         return;
@@ -126,20 +124,20 @@ void particleHandleCollision(Particle *p1, Particle *p2)
 
     double common_factor = dot_dv_dp / norm_dp_sq;
 
-    // Facteurs scalaires pour chaque particule selon les formules :
-    // Pour p1 (i) : + (2*m2 / (m1+m2)) * (Δv·Δp / ||Δp||²) * Δp
-    // Pour p2 (j) : - (2*m1 / (m1+m2)) * (Δv·Δp / ||Δp||²) * Δp
     double factor1 = (2.0 * m2 / mass_sum) * common_factor;
-    double factor2 = (2.0 * m1 / mass_sum) * common_factor; 
+    double factor2 = (2.0 * m1 / mass_sum) * common_factor;
 
-    Vector facV1 = vectorMultByScalar(dp,factor1);
-    Vector facV2 = vectorMultByScalar(dp,factor2);
+    Vector facV1 = vectorMultByScalar(dp, factor1);
+    Vector facV2 = vectorMultByScalar(dp, factor2);
 
+    vel1 = vectorSum(vel1, facV1);
+    vel2 = vectorDiff(vel2, facV2);
 
-    vel1 = vectorSum (vel1 ,facV1 );
-    vel2 = vectorDiff(vel2 , facV2 );
+    p1->velocity = vel1;             
+    p2->velocity = vel2;             
 
-
+    p1->numcollision++;              
+    p2->numcollision++;              
 }
 
 

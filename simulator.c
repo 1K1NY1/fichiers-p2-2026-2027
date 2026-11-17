@@ -2,6 +2,7 @@
 #include "particle.h"
 #include <float.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include "color.h"
 #include <math.h>
@@ -27,18 +28,45 @@
 
 Simulator *simulatorCreate(double width, double height, int maxNumParticles)
 {
-   Simulator *s = malloc(sizeof(Simulator));
+    Simulator *s = malloc(sizeof(Simulator));
+    if (s == NULL) {
+        return NULL;
+    }
 
-   s->width = width ; 
-   s->height = height ; 
-   s->maxParticles = maxNumParticles;
+    s->particles = malloc(maxNumParticles * sizeof(Particle *));
+    if (s->particles == NULL) {
+        free(s);
+        return NULL;
+    }
 
+    for (int i = 0; i < maxNumParticles; i++) {
+        s->particles[i] = NULL;
+    }
 
-   return s;
+    s->width = width;
+    s->height = height;
+    s->maxParticles = maxNumParticles;
+    s->nbParticles = 0;
+    s->time = 0.0;
+    s->numCollisions = 0;
+    s->started = false;
+    s->currentEvent = eventCreate(NONE, NULL, NULL, INFINITY_TIME);
+
+    return s;
 }
 
 
-void simulatorFree(Simulator *s){
+void simulatorFree(Simulator *s)
+{
+   if (s == NULL) return;
+
+    for (int i = 0; i < s->nbParticles; i++) {
+        particleFree(s->particles[i]); // Vérifie le nom exact dans particle.h (particleFree ou free)
+    }
+    free(s->particles);
+    if (s->currentEvent != NULL) {
+        eventFree(s->currentEvent);
+    }
    free(s);
 }
 
@@ -124,58 +152,64 @@ Particle *simulatorGetParticle(Simulator *s, int index)
     
 }
 
-
 Event *simulatorGetNextEvent(Simulator *s)
 {
-   eventSet(s->currentEvent, NONE,NULL ,NULL ,INFINITY_TIME); // current event crée
+   eventSet(s->currentEvent, NONE, NULL, NULL, INFINITY_TIME);
 
-   for (int i = 0 ; i <s->nbParticles; i++ ) // parcours des particules et on cherche les collisions entre particules.
+   for (int i = 0; i < s->nbParticles; i++) 
    {
       Particle *p = s->particles[i];
       double width = s->width;                  
       double height = s->height;
-      double tx = particleGetXWallCollisionTime (p,width);
-      double ty = particleGetYWallCollisionTime (p, height);
-
-       if (s->time + tx < eventGetTime(s->currentEvent))
-       {
-         eventSet(s->currentEvent,XWALL, p, NULL, s->time + tx);
-       }
-       if (s->time + ty < eventGetTime(s->currentEvent))
-       {
-         eventSet(s->currentEvent,YWALL, p, NULL, s->time + ty);
-       }
       
+      double tx = particleGetXWallCollisionTime(p, width);
+      double ty = particleGetYWallCollisionTime(p, height);
 
-        for (int j = i + 1; j < s->nbParticles; j++)
-        {
-            double t = particleGetCollisionTime(p, s->particles[j]);
+     
+      if (tx >= 0 && s->time + tx < eventGetTime(s->currentEvent))
+      {
+         eventSet(s->currentEvent, XWALL, p, NULL, s->time + tx);
+      }
+      if (ty >= 0 && s->time + ty < eventGetTime(s->currentEvent))
+      {
+         eventSet(s->currentEvent, YWALL, p, NULL, s->time + ty);
+      }
 
-            if (s->time + t < eventGetTime(s->currentEvent))
-            {
-                eventSet(s->currentEvent, COLLISION , p, s->particles[j], s->time + t);
-            }
+      for (int j = i + 1; j < s->nbParticles; j++)
+      {
+          double t = particleGetCollisionTime(p, s->particles[j]);
+
+          if (t >= 0 && s->time + t < eventGetTime(s->currentEvent))
+          {
+              eventSet(s->currentEvent, COLLISION, p, s->particles[j], s->time + t);
+          }
+      }
    }
-}
-   s->started = true ; 
+
+   
+   s->started = true; 
    return s->currentEvent;
 }
 
 
-static void collisionHandle (Event *collision , Simulator *s) 
+static void collisionHandle (Event *collision, Simulator *s) 
 {
-   if (eventGetType(collision)== XWALL){
+   EventType type = eventGetType(collision);
+   if (type == XWALL) {
       Particle *p1 = eventGetParticle1(collision);
       particleHandleXWallCollision(p1);
    }
-   if (eventGetType(collision)== YWALL) {
+   else if (type == YWALL) {
       Particle *p1 = eventGetParticle1(collision);
-      particleHandleYWallCollision(p1);}
-   if (eventGetType(collision)== COLLISION) {
+      particleHandleYWallCollision(p1);
+   }
+   else if (type == COLLISION) {
       Particle *p1 = eventGetParticle1(collision);
-      Particle *p2 = eventGetParticle1(collision);
-      particleHandleWallCollision(p1,p2);}
- }
+      Particle *p2 = eventGetParticle2(collision); // CORRIGÉ : p2 au lieu de p1 !
+      particleHandleCollision(p1, p2);
+      s->numCollisions++; // Incrémente le compteur
+   }
+}
 static void allparticlemove(Simulator *s, double dt)
 { 
    for (int i = 0 ; i < s->nbParticles ; i++ )
@@ -192,11 +226,13 @@ void simulatorStep(Simulator *s, double dt)
    
    while (eventGetTime(nextevent)< t) 
    {
+      
       double t_vat = eventGetTime(nextevent) ; 
+
+
       allparticlemove(s , t_vat - s->time );
       s->time = eventGetTime(nextevent);
       collisionHandle(nextevent , s ); 
-      eventFree(nextevent); 
       nextevent = simulatorGetNextEvent(s);
    }
    allparticlemove(s, t-s->time);
@@ -215,7 +251,7 @@ double simulatorStatParticles(Simulator *s, double (*f)(Particle *))
     int n = s->nbParticles;
 
     for (int i = 0; i < n; i++) {
-        sum += f(&s->particles[i]);     }
+        sum += f(s->particles[i]);     }
 
     return sum / n;
 }
