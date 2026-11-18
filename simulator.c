@@ -7,7 +7,7 @@
 #include "color.h"
 #include <math.h>
 #include "vector.h"
-#include "Event.h"
+
 
  struct Simulator_t {
    double width;                  // Largeur de la boîte

@@ -81,7 +81,7 @@ double particleKineticEnergy(Particle *p)
    double KineticEnergy = 0 ; 
    double mass  = particleGetMass(p); 
    Vector velocity = particleGetVelocity(p);
-   double v_squared = vectorNorm(velocity);
+   double v_squared = vectorDotProduct(velocity, velocity);;
 
     KineticEnergy = 0.5 * mass * v_squared ; 
 
@@ -122,7 +122,7 @@ void particleHandleCollision(Particle *p1, Particle *p2)
         return;
     }
 
-    double common_factor = dot_dv_dp / norm_dp_sq;
+    double common_factor = (dot_dv_dp / norm_dp_sq);
 
     double factor1 = (2.0 * m2 / mass_sum) * common_factor;
     double factor2 = (2.0 * m1 / mass_sum) * common_factor;

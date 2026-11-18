@@ -7,7 +7,6 @@
 #include "color.h"
 #include <math.h>
 #include "vector.h"
-#include "Event.h"
 #include <time.h>
 
 
@@ -41,10 +40,17 @@ int main(void)
         }
         
     }
+
+    printf("Energie initiale : %f\n", 
+            simulatorStatParticles(sim, particleKineticEnergy));
+    
         while (simulatorStatParticles(sim, particleGetNumCollisions) < 50)
     {
         simulatorStep(sim, 0.5);
-    } 
+    }
+    printf("Collisions moyennes par particule : %f\n",
+           simulatorStatParticles(sim, particleGetNumCollisions));
+
     FILE *f = fopen("speeds.txt", "w");
     for (int i = 0; i < 500 ; i++)
     {
